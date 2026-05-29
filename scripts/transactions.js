@@ -23,7 +23,11 @@ export async function addTransaction({ date, amount, type, categoryId, accountId
 }
 
 export async function updateTransaction(id, data) {
-  await dbUpdate(uid(), 'transactions', id, data);
+  const updated = { ...data };
+  if (updated.amount !== undefined) {
+    updated.amount = parseFloat(updated.amount);
+  }
+  await dbUpdate(uid(), 'transactions', id, updated);
 }
 
 export async function deleteTransaction(id) {

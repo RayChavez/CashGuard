@@ -51,9 +51,9 @@ export async function renderStats(rangeMonths = 6) {
   const filtered     = transactions.filter(t => new Date(t.date) >= rangeStart);
 
   const incomeByMonth  = months.map(m =>
-    filtered.filter(t => t.type === 'ingreso' && matchMonth(t.date, m)).reduce((s, t) => s + t.amount, 0));
+    filtered.filter(t => t.type === 'ingreso' && matchMonth(t.date, m)).reduce((s, t) => s + parseFloat(t.amount || 0), 0));
   const expenseByMonth = months.map(m =>
-    filtered.filter(t => t.type === 'gasto'   && matchMonth(t.date, m)).reduce((s, t) => s + t.amount, 0));
+    filtered.filter(t => t.type === 'gasto'   && matchMonth(t.date, m)).reduce((s, t) => s + parseFloat(t.amount || 0), 0));
 
   const cumulativeBalance = incomeByMonth.map((v, i) => {
     const net = incomeByMonth.slice(0, i + 1).reduce((s, v) => s + v, 0) -
@@ -68,7 +68,7 @@ export async function renderStats(rangeMonths = 6) {
   });
   const expByCategory = thisMonthExp.reduce((acc, t) => {
     const name = catMap[t.categoryId]?.name || 'Sin categoría';
-    acc[name]  = (acc[name] || 0) + t.amount;
+    acc[name]  = (acc[name] || 0) + parseFloat(t.amount || 0);
     return acc;
   }, {});
 
@@ -168,8 +168,8 @@ function renderSummaryCards(filtered, now) {
     const d = new Date(t.date);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
-  const ingresos = currentMonth.filter(t => t.type === 'ingreso').reduce((s, t) => s + t.amount, 0);
-  const gastos   = currentMonth.filter(t => t.type === 'gasto').reduce((s, t) => s + t.amount, 0);
+  const ingresos = currentMonth.filter(t => t.type === 'ingreso').reduce((s, t) => s + parseFloat(t.amount || 0), 0);
+  const gastos   = currentMonth.filter(t => t.type === 'gasto').reduce((s, t) => s + parseFloat(t.amount || 0), 0);
   const balance  = ingresos - gastos;
   const fmt      = v => `$${Math.abs(v).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
 

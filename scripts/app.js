@@ -213,7 +213,7 @@ document.getElementById('txForm')?.addEventListener('submit', async (e) => {
     
     const txData = {
       date:       document.getElementById('txDate').value,
-      amount:     document.getElementById('txAmount').value,
+      amount:     parseFloat(document.getElementById('txAmount').value) || 0,
       type:       document.getElementById('txType').value,
       categoryId: document.getElementById('txCategory').value.split('__')[0] || null,
       accountId:  document.getElementById('txAccount').value || null,
@@ -316,8 +316,8 @@ async function renderDashboardSummary() {
     const d = new Date(t.date + 'T12:00:00');
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
-  const ingresos = currentMonth.filter(t => t.type === 'ingreso').reduce((s, t) => s + t.amount, 0);
-  const gastos   = currentMonth.filter(t => t.type === 'gasto').reduce((s, t) => s + t.amount, 0);
+  const ingresos = currentMonth.filter(t => t.type === 'ingreso').reduce((s, t) => s + parseFloat(t.amount || 0), 0);
+  const gastos   = currentMonth.filter(t => t.type === 'gasto').reduce((s, t) => s + parseFloat(t.amount || 0), 0);
   const balance  = ingresos - gastos;
   const fmt      = v => `$${v.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
 
