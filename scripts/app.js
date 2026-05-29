@@ -154,12 +154,19 @@ async function showApp(user) {
 //  TAB NAVIGATION
 // ══════════════════════════════════════════════════════════════════════════════
 window.switchTab = async function (tab) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `tab-${tab}`));
+  showLoading('Cargando datos...');
+  try {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `tab-${tab}`));
 
-  if (tab === 'gastos') await loadGastosTab();
-  if (tab === 'config') await loadConfigTab();
-  if (tab === 'stats')  await renderStats(parseInt(document.getElementById('statsRange')?.value || '6'));
+    if (tab === 'gastos') await loadGastosTab();
+    if (tab === 'config') await loadConfigTab();
+    if (tab === 'stats')  await renderStats(parseInt(document.getElementById('statsRange')?.value || '6'));
+  } catch (err) {
+    showToast('Error al cargar datos: ' + err.message, 'error');
+  } finally {
+    hideLoading();
+  }
 };
 
 document.getElementById('statsRange')?.addEventListener('change', async (e) => {
@@ -202,6 +209,7 @@ document.getElementById('txForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   try {
     setFormBusy('txForm', true, '💾 Guardando...');
+    showLoading(editTransactionId ? 'Actualizando transacción...' : 'Guardando transacción...');
     
     const txData = {
       date:       document.getElementById('txDate').value,
@@ -231,6 +239,7 @@ document.getElementById('txForm')?.addEventListener('submit', async (e) => {
   } catch (err) {
     showToast('Error: ' + err.message, 'error');
   } finally {
+    hideLoading();
     setFormBusy('txForm', false, '💾 Guardar Transacción');
   }
 });
@@ -287,6 +296,7 @@ async function renderTransactionList() {
 
 window.deleteTx = async function (id) {
   if (!confirm('¿Eliminar esta transacción?')) return;
+  showLoading('Eliminando transacción...');
   try {
     await deleteTransaction(id);
     await renderTransactionList();
@@ -294,6 +304,8 @@ window.deleteTx = async function (id) {
     showToast('Transacción eliminada');
   } catch (err) {
     showToast('Error: ' + err.message, 'error');
+  } finally {
+    hideLoading();
   }
 };
 
@@ -330,6 +342,7 @@ document.getElementById('accountForm')?.addEventListener('submit', async (e) => 
   e.preventDefault();
   try {
     setFormBusy('accountForm', true, '🏦 Guardando...');
+    showLoading('Guardando cuenta...');
     await addAccount({
       type:        document.getElementById('accType').value,
       name:        document.getElementById('accName').value.trim(),
@@ -342,6 +355,7 @@ document.getElementById('accountForm')?.addEventListener('submit', async (e) => 
   } catch (err) {
     showToast('Error: ' + err.message, 'error');
   } finally {
+    hideLoading();
     setFormBusy('accountForm', false, '🏦 Crear Cuenta');
   }
 });
@@ -370,9 +384,16 @@ async function renderAccountsList() {
 
 window.deleteAcc = async function (id) {
   if (!confirm('¿Eliminar esta cuenta?')) return;
-  await deleteAccount(id);
-  await renderAccountsList();
-  showToast('Cuenta eliminada');
+  showLoading('Eliminando cuenta...');
+  try {
+    await deleteAccount(id);
+    await renderAccountsList();
+    showToast('Cuenta eliminada');
+  } catch (err) {
+    showToast('Error: ' + err.message, 'error');
+  } finally {
+    hideLoading();
+  }
 };
 
 // Subcategories
@@ -410,6 +431,7 @@ document.getElementById('categoryForm')?.addEventListener('submit', async (e) =>
   e.preventDefault();
   try {
     setFormBusy('categoryForm', true, '🏷️ Guardando...');
+    showLoading('Guardando categoría...');
     await addCategory({
       name:          document.getElementById('catName').value.trim(),
       icon:          document.getElementById('catIcon').value.trim() || '📂',
@@ -424,6 +446,7 @@ document.getElementById('categoryForm')?.addEventListener('submit', async (e) =>
   } catch (err) {
     showToast('Error: ' + err.message, 'error');
   } finally {
+    hideLoading();
     setFormBusy('categoryForm', false, '🏷️ Crear Categoría');
   }
 });
@@ -456,9 +479,16 @@ async function renderCategoriesList() {
 
 window.deleteCat = async function (id) {
   if (!confirm('¿Eliminar esta categoría?')) return;
-  await deleteCategory(id);
-  await renderCategoriesList();
-  showToast('Categoría eliminada');
+  showLoading('Eliminando categoría...');
+  try {
+    await deleteCategory(id);
+    await renderCategoriesList();
+    showToast('Categoría eliminada');
+  } catch (err) {
+    showToast('Error: ' + err.message, 'error');
+  } finally {
+    hideLoading();
+  }
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -600,6 +630,20 @@ window.cancelEditTx = function () {
   document.getElementById('txDate').value = todayISO();
   document.getElementById('typeGasto').checked = true;
   document.getElementById('txType').value = 'gasto';
+};
+
+window.showLoading = function (msg = 'Cargando...') {
+  const overlay = document.getElementById('globalLoading');
+  const text = document.getElementById('globalLoadingText');
+  if (overlay) {
+    if (text) text.textContent = msg;
+    overlay.classList.add('active');
+  }
+};
+
+window.hideLoading = function () {
+  const overlay = document.getElementById('globalLoading');
+  if (overlay) overlay.classList.remove('active');
 };
 
 // Translate Firebase error codes to Spanish
