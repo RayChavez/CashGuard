@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CashGuard – Gestión Financiera Personal</title>
+  <meta name="description" content="Controla tus finanzas personales con CashGuard. Registra gastos, ingresos y transferencias. Visualiza estadísticas y gestiona tus cuentas con sincronización en la nube." />
+  <meta name="theme-color" content="#07040f" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%238b5cf6'/><text y='22' x='5' font-size='18'>💰</text></svg>" />
+  <link rel="stylesheet" href="styles/main.css" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════
+     AUTH MODAL
+     ══════════════════════════════════════════════════════════════ -->
+<div id="authModal" role="dialog" aria-modal="true" aria-label="Inicio de sesión">
+  <div class="auth-card">
+
+    <div class="auth-logo">
+      <div class="logo-icon">💰</div>
+      <h1>CashGuard</h1>
+      <p>Tu guardián financiero personal</p>
+    </div>
+
+    <!-- ── LOGIN ──────────────────────────────────────────────── -->
+    <div id="auth-login" class="auth-view active">
+      <h2 class="auth-title">Iniciar Sesión</h2>
+
+      <div class="social-buttons">
+        <button class="btn-social" id="btnGoogle">
+          <span class="social-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+            </svg>
+          </span>
+          Google
+        </button>
+        <button class="btn-social" id="btnFacebook">
+          <span class="social-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#1877F2" xmlns="http://www.w3.org/2000/svg">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+          </span>
+          Facebook
+        </button>
+        <button class="btn-social" id="btnApple">
+          <span class="social-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701z"/>
+            </svg>
+          </span>
+          Apple
+        </button>
+      </div>
+
+      <div class="auth-divider">o continúa con correo</div>
+
+      <form id="loginForm" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="loginEmail">Correo electrónico</label>
+          <input class="form-input" type="email" id="loginEmail" placeholder="tu@correo.com" required autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">Contraseña</label>
+          <div class="input-with-icon">
+            <input class="form-input" type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password" />
+            <button type="button" class="input-eye" onclick="togglePassword('loginPassword', this)">👁️</button>
+          </div>
+        </div>
+        <div id="loginError" class="auth-msg error"></div>
+        <button type="submit" class="btn-primary" data-label="Ingresar">Ingresar</button>
+      </form>
+
+      <div class="auth-footer">
+        <a onclick="switchAuthView('recovery')">¿Olvidaste tu contraseña?</a>
+        &nbsp;·&nbsp;
+        <a onclick="switchAuthView('register')">Crear cuenta</a>
+      </div>
+    </div>
+
+    <!-- ── REGISTER ────────────────────────────────────────────── -->
+    <div id="auth-register" class="auth-view">
+      <h2 class="auth-title">Crear Cuenta</h2>
+
+      <form id="registerForm" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="regName">Nombre completo</label>
+          <input class="form-input" type="text" id="regName" placeholder="Tu nombre" required autocomplete="name" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="regEmail">Correo electrónico</label>
+          <input class="form-input" type="email" id="regEmail" placeholder="tu@correo.com" required autocomplete="email" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="regPassword">Contraseña</label>
+            <div class="input-with-icon">
+              <input class="form-input" type="password" id="regPassword" placeholder="Mín. 6 chars" required autocomplete="new-password" minlength="6" />
+              <button type="button" class="input-eye" onclick="togglePassword('regPassword', this)">👁️</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="regPassword2">Confirmar</label>
+            <input class="form-input" type="password" id="regPassword2" placeholder="Repetir" required autocomplete="new-password" />
+          </div>
+        </div>
+        <div id="registerError" class="auth-msg error"></div>
+        <button type="submit" class="btn-primary" data-label="Crear cuenta">Crear cuenta</button>
+      </form>
+
+      <div class="auth-footer">
+        ¿Ya tienes cuenta? <a onclick="switchAuthView('login')">Inicia sesión</a>
+      </div>
+    </div>
+
+    <!-- ── RECOVERY ───────────────────────────────────────────── -->
+    <div id="auth-recovery" class="auth-view">
+      <h2 class="auth-title">Recuperar Contraseña</h2>
+      <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:1.2rem; text-align:center;">
+        Te enviaremos un correo con un enlace para restablecer tu contraseña.
+      </p>
+
+      <form id="recoveryForm" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="recEmail">Correo electrónico de tu cuenta</label>
+          <input class="form-input" type="email" id="recEmail" placeholder="tu@correo.com" required autocomplete="email" />
+        </div>
+        <div id="recoveryMsg" class="auth-msg error"></div>
+        <button type="submit" class="btn-primary" data-label="Enviar correo de recuperación">
+          📧 Enviar correo de recuperación
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <a onclick="switchAuthView('login')">← Volver al inicio de sesión</a>
+      </div>
+    </div>
+
+  </div><!-- /.auth-card -->
+</div><!-- /#authModal -->
+
+<!-- ══════════════════════════════════════════════════════════════
+     APP SHELL
+     ══════════════════════════════════════════════════════════════ -->
+<div id="appShell" style="display:none">
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-logo">
+      <div class="logo-mark">💰</div>
+      <span>CashGuard</span>
+    </div>
+    <div class="header-user">
+      <div class="user-avatar" id="userAvatar">U</div>
+      <span id="userName"></span>
+      <button class="btn-logout" id="logoutBtn">Salir</button>
+    </div>
+  </header>
+
+  <!-- Tab Navigation -->
+  <nav class="tab-nav" role="tablist">
+    <button class="tab-btn active" role="tab" data-tab="gastos" onclick="switchTab('gastos')" id="tab-btn-gastos">
+      💸 <span class="tab-label">Gastos</span>
+    </button>
+    <button class="tab-btn" role="tab" data-tab="config" onclick="switchTab('config')" id="tab-btn-config">
+      ⚙️ <span class="tab-label">Configuración</span>
+    </button>
+    <button class="tab-btn" role="tab" data-tab="stats" onclick="switchTab('stats')" id="tab-btn-stats">
+      📊 <span class="tab-label">Estadísticas</span>
+    </button>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="app-main">
+
+    <!-- ═══════════════ TAB 1: GASTOS ═══════════════ -->
+    <section id="tab-gastos" class="tab-content active" role="tabpanel">
+
+      <div class="summary-cards">
+        <div class="summary-card income">
+          <div class="card-label">Ingresos del mes</div>
+          <div class="card-icon">↑</div>
+          <div class="card-value" id="dash-income">$0.00</div>
+        </div>
+        <div class="summary-card expense">
+          <div class="card-label">Gastos del mes</div>
+          <div class="card-icon">↓</div>
+          <div class="card-value" id="dash-expense">$0.00</div>
+        </div>
+        <div class="summary-card balance">
+          <div class="card-label">Balance mensual</div>
+          <div class="card-icon">⚖️</div>
+          <div class="card-value" id="dash-balance" style="color:var(--accent-1)">$0.00</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+
+        <!-- Form -->
+        <div class="glass-card">
+          <h3><span class="section-icon">➕</span> Nueva Transacción</h3>
+          <form id="txForm" novalidate>
+
+            <div class="form-group">
+              <label class="form-label">Tipo de transacción</label>
+              <div class="type-selector">
+                <input type="radio" name="txTypeRadio" id="typeGasto" class="type-radio" value="gasto"
+                  onchange="document.getElementById('txType').value='gasto'" checked />
+                <label for="typeGasto" class="type-label">↓ Gasto</label>
+
+                <input type="radio" name="txTypeRadio" id="typeIngreso" class="type-radio" value="ingreso"
+                  onchange="document.getElementById('txType').value='ingreso'" />
+                <label for="typeIngreso" class="type-label">↑ Ingreso</label>
+
+                <input type="radio" name="txTypeRadio" id="typeTransferencia" class="type-radio" value="transferencia"
+                  onchange="document.getElementById('txType').value='transferencia'" />
+                <label for="typeTransferencia" class="type-label">⇄ Transfer.</label>
+              </div>
+              <input type="hidden" id="txType" value="gasto" />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="txDate">Fecha</label>
+                <input class="form-input" type="date" id="txDate" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="txAmount">Importe (MXN)</label>
+                <div class="amount-wrapper">
+                  <span class="amount-prefix">$</span>
+                  <input class="form-input" type="number" id="txAmount" placeholder="0.00" min="0" step="0.01" required />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="txCategory">Categoría</label>
+                <select class="form-select" id="txCategory">
+                  <option value="">— Sin categoría —</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="txAccount">Cuenta</label>
+                <select class="form-select" id="txAccount">
+                  <option value="">— Sin cuenta —</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="txNotes">Notas <span style="color:var(--text-muted)">(opcional)</span></label>
+              <textarea class="form-textarea" id="txNotes" placeholder="Agrega una nota..." rows="2"></textarea>
+            </div>
+
+            <button type="submit" class="btn-submit" data-label="💾 Guardar Transacción">
+              💾 Guardar Transacción
+            </button>
+          </form>
+        </div>
+
+        <!-- List -->
+        <div class="glass-card">
+          <div class="list-header">
+            <h3><span class="section-icon">📋</span> Historial</h3>
+          </div>
+          <div class="tx-list" id="transactionList">
+            <div class="empty-state">
+              <span>💸</span><p>Sin transacciones aún</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ═══════════════ TAB 2: CONFIGURACIÓN ═══════════════ -->
+    <section id="tab-config" class="tab-content" role="tabpanel">
+      <div class="config-grid">
+
+        <!-- Cuentas -->
+        <div class="glass-card">
+          <div class="config-section-header" onclick="toggleConfigSection('accounts-form')">
+            <h3>🏦 Alta de Cuentas</h3>
+            <span style="color:var(--accent-1); font-size:1.2rem">＋</span>
+          </div>
+          <div id="config-accounts-form" class="collapsed">
+            <form id="accountForm" novalidate>
+              <div class="form-group">
+                <label class="form-label" for="accType">Tipo de cuenta</label>
+                <select class="form-select" id="accType" required>
+                  <option value="cash">💵 Efectivo</option>
+                  <option value="debit">💳 Débito</option>
+                  <option value="credit">💰 Crédito</option>
+                  <option value="savings">🏦 Ahorro</option>
+                  <option value="investment">📈 Inversión</option>
+                  <option value="other">📦 Otra</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="accName">Nombre *</label>
+                <input class="form-input" type="text" id="accName" placeholder="Ej. BBVA Débito" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="accDesc">Descripción <span style="color:var(--text-muted)">(opcional)</span></label>
+                <input class="form-input" type="text" id="accDesc" placeholder="Descripción breve" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="accBalance">Saldo inicial</label>
+                <div class="amount-wrapper">
+                  <span class="amount-prefix">$</span>
+                  <input class="form-input" type="number" id="accBalance" placeholder="0.00" min="0" step="0.01" />
+                </div>
+              </div>
+              <button type="submit" class="btn-submit" data-label="🏦 Crear Cuenta">🏦 Crear Cuenta</button>
+            </form>
+          </div>
+          <div class="config-list" id="accountsList">
+            <div class="empty-state"><span>🏦</span><p>Sin cuentas</p></div>
+          </div>
+        </div>
+
+        <!-- Categorías -->
+        <div class="glass-card">
+          <div class="config-section-header" onclick="toggleConfigSection('categories-form')">
+            <h3>🏷️ Alta de Categorías</h3>
+            <span style="color:var(--accent-1); font-size:1.2rem">＋</span>
+          </div>
+          <div id="config-categories-form" class="collapsed">
+            <form id="categoryForm" novalidate>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="catName">Nombre *</label>
+                  <input class="form-input" type="text" id="catName" placeholder="Ej. Alimentación" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="catIcon">Ícono (emoji)</label>
+                  <input class="form-input" type="text" id="catIcon" placeholder="🍽️" maxlength="4" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="catDesc">Descripción <span style="color:var(--text-muted)">(opcional)</span></label>
+                <input class="form-input" type="text" id="catDesc" placeholder="Descripción de la categoría" />
+              </div>
+
+              <!-- Subcategories -->
+              <div class="subcat-panel">
+                <h4>📁 Subcategorías</h4>
+                <div class="form-row">
+                  <div class="form-group" style="margin:0">
+                    <input class="form-input" type="text" id="subName" placeholder="Nombre" />
+                  </div>
+                  <div class="form-group" style="margin:0">
+                    <input class="form-input" type="text" id="subIcon" placeholder="Ícono" maxlength="4" />
+                  </div>
+                </div>
+                <div class="form-group" style="margin-top:0.5rem">
+                  <input class="form-input" type="text" id="subDesc" placeholder="Descripción (opcional)" />
+                </div>
+                <button type="button" class="subcat-add-btn" onclick="addSubcategory()">＋ Agregar subcategoría</button>
+                <div class="pending-subcats" id="pendingSubcats" style="margin-top:0.6rem"></div>
+              </div>
+
+              <button type="submit" class="btn-submit" data-label="🏷️ Crear Categoría">🏷️ Crear Categoría</button>
+            </form>
+          </div>
+          <div class="config-list" id="categoriesList">
+            <div class="empty-state"><span>🏷️</span><p>Sin categorías</p></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ═══════════════ TAB 3: ESTADÍSTICAS ═══════════════ -->
+    <section id="tab-stats" class="tab-content" role="tabpanel">
+
+      <div class="stats-header">
+        <h2>📊 Estadísticas Financieras</h2>
+        <div class="stats-range">
+          <label for="statsRange">Período:</label>
+          <select id="statsRange">
+            <option value="3">3 meses</option>
+            <option value="6" selected>6 meses</option>
+            <option value="12">12 meses</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="stat-label">💚 Ingresos del mes</div>
+          <div class="stat-value positive" id="stat-income">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">❤️ Gastos del mes</div>
+          <div class="stat-value negative" id="stat-expense">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">💜 Balance mensual</div>
+          <div class="stat-value positive" id="stat-balance">$0.00</div>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card full-width">
+          <div class="chart-title">📈 Ingresos vs Gastos por Mes</div>
+          <div class="chart-container tall"><canvas id="barChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">📉 Evolución del Balance Acumulado</div>
+          <div class="chart-container"><canvas id="lineChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">🍩 Gastos por Categoría (mes actual)</div>
+          <div class="chart-container" style="position:relative">
+            <canvas id="donutChart"></canvas>
+            <div id="donutNoData" style="display:none; position:absolute; inset:0; align-items:center; justify-content:center; flex-direction:column; gap:0.5rem; color:var(--text-muted); font-size:0.85rem">
+              <span style="font-size:2rem">📊</span>
+              <p>Sin gastos este mes</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+</div><!-- /#appShell -->
+
+<!-- Toast -->
+<div class="toast" id="toast" role="alert" aria-live="polite"></div>
+
+<!-- Firebase badge (dev indicator) -->
+<div class="firebase-badge" id="firebaseBadge" title="Datos sincronizados con Firebase">
+  🔥 Firebase
+</div>
+
+<!-- App entry point (ES Module) -->
+<script type="module" src="scripts/app.js"></script>
+</body>
+</html>
