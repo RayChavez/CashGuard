@@ -33,9 +33,16 @@ export async function deleteTransaction(id) {
 export async function getTransactions() {
   const all = await dbGetAll(uid(), 'transactions');
   return all.sort((a, b) => {
-    const da = a.date || tsToISO(a.createdAt);
-    const db_ = b.date || tsToISO(b.createdAt);
-    return new Date(db_) - new Date(da);
+    // Compare calendar dates (e.g. '2026-05-29')
+    const dateA = a.date || '';
+    const dateB = b.date || '';
+    if (dateA !== dateB) {
+      return dateB.localeCompare(dateA); // Descending order
+    }
+    // If calendar dates are identical, compare exact creation time (createdAt)
+    const timeA = a.createdAt ? (a.createdAt.seconds || new Date(tsToISO(a.createdAt)).getTime()) : 0;
+    const timeB = b.createdAt ? (b.createdAt.seconds || new Date(tsToISO(b.createdAt)).getTime()) : 0;
+    return timeB - timeA; // Descending order
   });
 }
 

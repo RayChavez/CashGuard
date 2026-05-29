@@ -9,7 +9,7 @@ import {
   loginWithGoogle, loginWithFacebook, loginWithApple,
   sendRecoveryEmail, logout
 }                                  from './auth.js';
-import { addTransaction, getTransactions, deleteTransaction } from './transactions.js';
+import { addTransaction, getTransactions, deleteTransaction, updateTransaction } from './transactions.js';
 import { addAccount, getAccounts, deleteAccount,
          addCategory, getCategories, deleteCategory }         from './config.js';
 import { renderStats }             from './stats.js';
@@ -196,27 +196,38 @@ async function populateSelects() {
 }
 
 // Transaction form
+let editTransactionId = null;
+
 document.getElementById('txForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   try {
     setFormBusy('txForm', true, '💾 Guardando...');
-    await addTransaction({
+    
+    const txData = {
       date:       document.getElementById('txDate').value,
       amount:     document.getElementById('txAmount').value,
       type:       document.getElementById('txType').value,
       categoryId: document.getElementById('txCategory').value.split('__')[0] || null,
       accountId:  document.getElementById('txAccount').value || null,
       notes:      document.getElementById('txNotes').value,
-    });
-    e.target.reset();
-    document.getElementById('txDate').value = todayISO();
-    // Reset radio to "gasto"
-    document.getElementById('typeGasto').checked = true;
-    document.getElementById('txType').value      = 'gasto';
+    };
+
+    if (editTransactionId) {
+      await updateTransaction(editTransactionId, txData);
+      showToast('Transacción actualizada ✅');
+      cancelEditTx();
+    } else {
+      await addTransaction(txData);
+      showToast('Transacción guardada ✅');
+      e.target.reset();
+      document.getElementById('txDate').value = todayISO();
+      // Reset radio to "gasto"
+      document.getElementById('typeGasto').checked = true;
+      document.getElementById('txType').value      = 'gasto';
+    }
 
     await renderTransactionList();
     await renderDashboardSummary();
-    showToast('Transacción guardada ✅');
   } catch (err) {
     showToast('Error: ' + err.message, 'error');
   } finally {
@@ -266,7 +277,10 @@ async function renderTransactionList() {
         <div class="tx-amount" style="color:${tc.color}">
           ${tc.sign !== '⇄' ? tc.sign : ''}$${t.amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
         </div>
-        <button class="tx-delete" onclick="deleteTx('${t.id}')" title="Eliminar">×</button>
+        <div class="tx-actions">
+          <button class="tx-action-btn edit" onclick="editTx('${t.id}')" title="Editar">✏️</button>
+          <button class="tx-action-btn delete" onclick="deleteTx('${t.id}')" title="Eliminar">×</button>
+        </div>
       </div>`;
   }).join('');
 }
@@ -516,6 +530,76 @@ window.toggleConfigSection = function (section) {
       }
     }
   }
+};
+
+window.editTx = async function (id) {
+  try {
+    const transactions = await getTransactions();
+    const t = transactions.find(x => x.id === id);
+    if (!t) throw new Error('No se encontró la transacción.');
+
+    editTransactionId = id;
+
+    // Change title and button text
+    const formTitle = document.querySelector('#txForm').previousElementSibling;
+    if (formTitle) formTitle.innerHTML = '<span class="section-icon">✏️</span> Editar Transacción';
+
+    const submitBtn = document.getElementById('txForm').querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.textContent = '💾 Actualizar Transacción';
+      submitBtn.dataset.label = '💾 Actualizar Transacción';
+    }
+
+    // Show cancel button
+    const cancelBtn = document.getElementById('btnCancelEdit');
+    if (cancelBtn) cancelBtn.style.display = 'inline-flex';
+
+    // Populate inputs
+    document.getElementById('txDate').value = t.date;
+    document.getElementById('txAmount').value = t.amount;
+    document.getElementById('txNotes').value = t.notes || '';
+    
+    // Select type radio
+    document.getElementById('txType').value = t.type;
+    const radio = document.getElementById(`type${t.type.charAt(0).toUpperCase() + t.type.slice(1)}`);
+    if (radio) radio.checked = true;
+
+    // Populates selects
+    await populateSelects();
+    
+    // Set selects values
+    document.getElementById('txAccount').value = t.accountId || '';
+    document.getElementById('txCategory').value = t.categoryId || '';
+
+    // Scroll smoothly to form (especially useful on mobile!)
+    document.getElementById('txForm').scrollIntoView({ behavior: 'smooth' });
+  } catch (err) {
+    showToast('Error: ' + err.message, 'error');
+  }
+};
+
+window.cancelEditTx = function () {
+  editTransactionId = null;
+
+  // Reset form title and button text
+  const formTitle = document.querySelector('#txForm').previousElementSibling;
+  if (formTitle) formTitle.innerHTML = '<span class="section-icon">➕</span> Nueva Transacción';
+
+  const submitBtn = document.getElementById('txForm').querySelector('button[type="submit"]');
+  if (submitBtn) {
+    submitBtn.textContent = '💾 Guardar Transacción';
+    submitBtn.dataset.label = '💾 Guardar Transacción';
+  }
+
+  // Hide cancel button
+  const cancelBtn = document.getElementById('btnCancelEdit');
+  if (cancelBtn) cancelBtn.style.display = 'none';
+
+  // Reset form inputs
+  document.getElementById('txForm').reset();
+  document.getElementById('txDate').value = todayISO();
+  document.getElementById('typeGasto').checked = true;
+  document.getElementById('txType').value = 'gasto';
 };
 
 // Translate Firebase error codes to Spanish

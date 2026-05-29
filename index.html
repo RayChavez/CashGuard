@@ -259,9 +259,14 @@
               <textarea class="form-textarea" id="txNotes" placeholder="Agrega una nota..." rows="2"></textarea>
             </div>
 
-            <button type="submit" class="btn-submit" data-label="💾 Guardar Transacción">
-              💾 Guardar Transacción
-            </button>
+            <div class="form-actions-row">
+              <button type="submit" class="btn-submit" data-label="💾 Guardar Transacción">
+                💾 Guardar Transacción
+              </button>
+              <button type="button" id="btnCancelEdit" class="btn-cancel" style="display: none;" onclick="cancelEditTx()">
+                ❌ Cancelar
+              </button>
+            </div>
           </form>
         </div>
 

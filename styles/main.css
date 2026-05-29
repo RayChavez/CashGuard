@@ -474,8 +474,15 @@ h3 { font-size: 1.1rem; }
 /* ── Form Rows ──────────────────────────────────────────────────── */
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 
-.btn-submit {
+.form-actions-row {
+  display: flex;
+  gap: 0.5rem;
   width: 100%;
+  margin-top: 0.5rem;
+}
+
+.btn-submit {
+  flex: 2;
   padding: 0.8rem;
   background: var(--accent-grad);
   border: none;
@@ -486,13 +493,31 @@ h3 { font-size: 1.1rem; }
   font-weight: 600;
   cursor: pointer;
   transition: var(--transition);
-  margin-top: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
 }
 .btn-submit:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: var(--accent-glow); }
+
+.btn-cancel {
+  flex: 1;
+  padding: 0.8rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.btn-cancel:hover { background: rgba(248, 113, 113, 0.1); border-color: #f87171; color: #f87171; }
 
 /* ── Transaction List ───────────────────────────────────────────── */
 .list-header {
@@ -533,19 +558,30 @@ h3 { font-size: 1.1rem; }
 .tx-meta { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.1rem; }
 .tx-notes { font-size: 0.78rem; color: var(--text-secondary); font-style: italic; margin-top: 0.15rem; }
 .tx-amount { font-weight: 700; font-size: 1rem; white-space: nowrap; }
-.tx-delete {
+.tx-actions {
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: var(--transition);
+}
+.tx-item:hover .tx-actions { opacity: 1; }
+
+.tx-action-btn {
   background: none;
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 1.1rem;
-  opacity: 0;
-  transition: var(--transition);
-  padding: 0.2rem 0.4rem;
+  font-size: 1rem;
+  padding: 0.25rem 0.45rem;
   border-radius: 6px;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.tx-item:hover .tx-delete { opacity: 1; }
-.tx-delete:hover { background: rgba(248,113,113,0.15); color: #f87171; }
+.tx-action-btn.delete { font-size: 1.1rem; }
+.tx-action-btn.edit:hover { background: rgba(139,92,246,0.15); color: var(--accent-1); }
+.tx-action-btn.delete:hover { background: rgba(248,113,113,0.15); color: #f87171; }
 
 /* ── Empty State ────────────────────────────────────────────────── */
 .empty-state {
