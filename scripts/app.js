@@ -10,8 +10,8 @@ import {
   sendRecoveryEmail, logout
 }                                  from './auth.js';
 import { addTransaction, getTransactions, deleteTransaction, updateTransaction } from './transactions.js';
-import { addAccount, getAccounts, deleteAccount,
-         addCategory, getCategories, deleteCategory }         from './config.js';
+import { addAccount, getAccounts, deleteAccount, updateAccount,
+         addCategory, getCategories, deleteCategory, updateCategory }         from './config.js';
 import { renderStats }             from './stats.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -342,16 +342,26 @@ document.getElementById('accountForm')?.addEventListener('submit', async (e) => 
   e.preventDefault();
   try {
     setFormBusy('accountForm', true, '🏦 Guardando...');
-    showLoading('Guardando cuenta...');
-    await addAccount({
+    showLoading(editAccountId ? 'Actualizando cuenta...' : 'Guardando cuenta...');
+    
+    const accountData = {
       type:        document.getElementById('accType').value,
       name:        document.getElementById('accName').value.trim(),
       description: document.getElementById('accDesc').value.trim(),
       balance:     document.getElementById('accBalance').value || 0,
-    });
-    e.target.reset();
+    };
+
+    if (editAccountId) {
+      await updateAccount(editAccountId, accountData);
+      showToast('Cuenta actualizada ✅');
+      cancelEditAccount();
+    } else {
+      await addAccount(accountData);
+      showToast('Cuenta creada ✅');
+      e.target.reset();
+    }
+    
     await renderAccountsList();
-    showToast('Cuenta creada ✅');
   } catch (err) {
     showToast('Error: ' + err.message, 'error');
   } finally {
@@ -377,6 +387,7 @@ async function renderAccountsList() {
         <div class="config-item-meta">${accountTypeLabel(a.type)}${a.description ? ' · ' + escapeHtml(a.description) : ''}</div>
       </div>
       <div class="config-item-actions">
+        <button class="btn-icon primary" onclick="editAcc('${a.id}')" title="Editar">✏️</button>
         <button class="btn-icon danger" onclick="deleteAcc('${a.id}')" title="Eliminar">🗑️</button>
       </div>
     </div>`).join('');
@@ -399,12 +410,24 @@ window.deleteAcc = async function (id) {
 // Subcategories
 let pendingSubcategories = [];
 
+let editingSubcatIndex = null;
+
 window.addSubcategory = function () {
   const name = document.getElementById('subName').value.trim();
   const icon = document.getElementById('subIcon').value.trim() || '📌';
   const desc = document.getElementById('subDesc').value.trim();
   if (!name) { showToast('Nombre de subcategoría requerido', 'error'); return; }
-  pendingSubcategories.push({ name, icon, description: desc });
+
+  if (editingSubcatIndex !== null) {
+    pendingSubcategories[editingSubcatIndex] = { name, icon, description: desc };
+    editingSubcatIndex = null;
+    const btn = document.getElementById('btnSubcatAdd');
+    if (btn) btn.textContent = '＋ Agregar subcategoría';
+    showToast('Subcategoría actualizada ✅');
+  } else {
+    pendingSubcategories.push({ name, icon, description: desc });
+  }
+
   document.getElementById('subName').value = '';
   document.getElementById('subIcon').value = '';
   document.getElementById('subDesc').value = '';
@@ -415,8 +438,9 @@ function renderPendingSubcategories() {
   const list = document.getElementById('pendingSubcats');
   if (!list) return;
   list.innerHTML = pendingSubcategories.map((s, i) =>
-    `<span class="subcat-tag">${s.icon} ${escapeHtml(s.name)}
-      <button type="button" onclick="removeSubcat(${i})">×</button>
+    `<span class="subcat-tag" style="cursor: pointer;" onclick="editSubcatInPanel(${i})" title="Haz clic para editar">
+      ${s.icon} ${escapeHtml(s.name)}
+      <button type="button" onclick="event.stopPropagation(); removeSubcat(${i})">×</button>
     </span>`
   ).join('');
 }
@@ -431,18 +455,28 @@ document.getElementById('categoryForm')?.addEventListener('submit', async (e) =>
   e.preventDefault();
   try {
     setFormBusy('categoryForm', true, '🏷️ Guardando...');
-    showLoading('Guardando categoría...');
-    await addCategory({
+    showLoading(editCategoryId ? 'Actualizando categoría...' : 'Guardando categoría...');
+    
+    const categoryData = {
       name:          document.getElementById('catName').value.trim(),
       icon:          document.getElementById('catIcon').value.trim() || '📂',
       description:   document.getElementById('catDesc').value.trim(),
       subcategories: [...pendingSubcategories],
-    });
-    e.target.reset();
-    pendingSubcategories = [];
-    renderPendingSubcategories();
+    };
+
+    if (editCategoryId) {
+      await updateCategory(editCategoryId, categoryData);
+      showToast('Categoría actualizada ✅');
+      cancelEditCategory();
+    } else {
+      await addCategory(categoryData);
+      showToast('Categoría creada ✅');
+      e.target.reset();
+      pendingSubcategories = [];
+      renderPendingSubcategories();
+    }
+
     await renderCategoriesList();
-    showToast('Categoría creada ✅');
   } catch (err) {
     showToast('Error: ' + err.message, 'error');
   } finally {
@@ -472,6 +506,7 @@ async function renderCategoriesList() {
           </div>` : ''}
       </div>
       <div class="config-item-actions">
+        <button class="btn-icon primary" onclick="editCat('${c.id}')" title="Editar">✏️</button>
         <button class="btn-icon danger" onclick="deleteCat('${c.id}')" title="Eliminar">🗑️</button>
       </div>
     </div>`).join('');
@@ -644,6 +679,174 @@ window.showLoading = function (msg = 'Cargando...') {
 window.hideLoading = function () {
   const overlay = document.getElementById('globalLoading');
   if (overlay) overlay.classList.remove('active');
+};
+
+let editAccountId = null;
+let editCategoryId = null;
+
+window.editAcc = async function (id) {
+  try {
+    const accounts = await getAccounts();
+    const a = accounts.find(x => x.id === id);
+    if (!a) throw new Error('No se encontró la cuenta.');
+
+    editAccountId = id;
+
+    // Expand the accounts form if it's collapsed
+    const formContainer = document.getElementById('config-accounts-form');
+    if (formContainer) {
+      formContainer.classList.remove('collapsed');
+      const header = formContainer.previousElementSibling;
+      if (header && header.classList.contains('config-section-header')) {
+        const icon = header.querySelector('span');
+        if (icon) {
+          icon.textContent = '－';
+          icon.style.transform = 'rotate(180deg)';
+        }
+      }
+    }
+
+    // Change title and button text
+    const formTitle = formContainer?.previousElementSibling?.querySelector('h3');
+    if (formTitle) formTitle.innerHTML = '🏦 Editar Cuenta';
+
+    const submitBtn = document.getElementById('accountForm').querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.textContent = '🏦 Actualizar Cuenta';
+      submitBtn.dataset.label = '🏦 Actualizar Cuenta';
+    }
+
+    // Show cancel button
+    const cancelBtn = document.getElementById('btnCancelEditAccount');
+    if (cancelBtn) cancelBtn.style.display = 'inline-flex';
+
+    // Populate inputs
+    document.getElementById('accType').value = a.type;
+    document.getElementById('accName').value = a.name;
+    document.getElementById('accDesc').value = a.description || '';
+    document.getElementById('accBalance').value = a.balance || 0;
+
+    // Scroll smoothly to form
+    document.getElementById('accountForm').scrollIntoView({ behavior: 'smooth' });
+  } catch (err) {
+    showToast('Error: ' + err.message, 'error');
+  }
+};
+
+window.cancelEditAccount = function () {
+  editAccountId = null;
+
+  // Reset form title and button text
+  const formContainer = document.getElementById('config-accounts-form');
+  const formTitle = formContainer?.previousElementSibling?.querySelector('h3');
+  if (formTitle) formTitle.innerHTML = '🏦 Alta de Cuentas';
+
+  const submitBtn = document.getElementById('accountForm').querySelector('button[type="submit"]');
+  if (submitBtn) {
+    submitBtn.textContent = '🏦 Crear Cuenta';
+    submitBtn.dataset.label = '🏦 Crear Cuenta';
+  }
+
+  // Hide cancel button
+  const cancelBtn = document.getElementById('btnCancelEditAccount');
+  if (cancelBtn) cancelBtn.style.display = 'none';
+
+  // Reset form inputs
+  document.getElementById('accountForm').reset();
+};
+
+window.editCat = async function (id) {
+  try {
+    const categories = await getCategories();
+    const c = categories.find(x => x.id === id);
+    if (!c) throw new Error('No se encontró la categoría.');
+
+    editCategoryId = id;
+
+    // Expand the categories form if it's collapsed
+    const formContainer = document.getElementById('config-categories-form');
+    if (formContainer) {
+      formContainer.classList.remove('collapsed');
+      const header = formContainer.previousElementSibling;
+      if (header && header.classList.contains('config-section-header')) {
+        const icon = header.querySelector('span');
+        if (icon) {
+          icon.textContent = '－';
+          icon.style.transform = 'rotate(180deg)';
+        }
+      }
+    }
+
+    // Change title and button text
+    const formTitle = formContainer?.previousElementSibling?.querySelector('h3');
+    if (formTitle) formTitle.innerHTML = '🏷️ Editar Categoría';
+
+    const submitBtn = document.getElementById('categoryForm').querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.textContent = '🏷️ Actualizar Categoría';
+      submitBtn.dataset.label = '🏷️ Actualizar Categoría';
+    }
+
+    // Show cancel button
+    const cancelBtn = document.getElementById('btnCancelEditCategory');
+    if (cancelBtn) cancelBtn.style.display = 'inline-flex';
+
+    // Populate inputs
+    document.getElementById('catName').value = c.name;
+    document.getElementById('catIcon').value = c.icon || '📂';
+    document.getElementById('catDesc').value = c.description || '';
+
+    // Populate subcategories
+    pendingSubcategories = [...(c.subcategories || [])];
+    renderPendingSubcategories();
+
+    // Scroll smoothly to form
+    document.getElementById('categoryForm').scrollIntoView({ behavior: 'smooth' });
+  } catch (err) {
+    showToast('Error: ' + err.message, 'error');
+  }
+};
+
+window.cancelEditCategory = function () {
+  editCategoryId = null;
+
+  // Reset form title and button text
+  const formContainer = document.getElementById('config-categories-form');
+  const formTitle = formContainer?.previousElementSibling?.querySelector('h3');
+  if (formTitle) formTitle.innerHTML = '🏷️ Alta de Categorías';
+
+  const submitBtn = document.getElementById('categoryForm').querySelector('button[type="submit"]');
+  if (submitBtn) {
+    submitBtn.textContent = '🏷️ Crear Categoría';
+    submitBtn.dataset.label = '🏷️ Crear Categoría';
+  }
+
+  // Hide cancel button
+  const cancelBtn = document.getElementById('btnCancelEditCategory');
+  if (cancelBtn) cancelBtn.style.display = 'none';
+
+  // Reset form inputs
+  document.getElementById('categoryForm').reset();
+  pendingSubcategories = [];
+  renderPendingSubcategories();
+};
+
+window.editSubcatInPanel = function (index) {
+  const s = pendingSubcategories[index];
+  if (!s) return;
+
+  editingSubcatIndex = index;
+
+  // Populate inputs
+  document.getElementById('subName').value = s.name;
+  document.getElementById('subIcon').value = s.icon || '📌';
+  document.getElementById('subDesc').value = s.description || '';
+
+  // Change button text
+  const btn = document.getElementById('btnSubcatAdd');
+  if (btn) btn.textContent = '💾 Actualizar subcategoría';
+
+  showToast('Editando subcategoría... Modifica los datos arriba ✏️');
 };
 
 // Translate Firebase error codes to Spanish

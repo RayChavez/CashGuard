@@ -663,7 +663,8 @@ h3 { font-size: 1.1rem; }
   opacity: 0.6;
 }
 .btn-icon:hover { opacity: 1; }
-.btn-icon.danger:hover { background: rgba(248,113,113,0.15); }
+.btn-icon.primary:hover { background: rgba(139,92,246,0.15); color: var(--accent-1); }
+.btn-icon.danger:hover { background: rgba(248,113,113,0.15); color: #f87171; }
 
 /* Subcategories */
 .subcats-list { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
