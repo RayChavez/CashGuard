@@ -176,13 +176,33 @@ document.getElementById('statsRange')?.addEventListener('change', async (e) => {
 // ══════════════════════════════════════════════════════════════════════════════
 //  TAB 1 — GASTOS
 // ══════════════════════════════════════════════════════════════════════════════
+let cachedAccounts = null;
+let cachedCategories = null;
+
+async function fetchAccountsWithCache(forceRefresh = false) {
+  if (forceRefresh || !cachedAccounts) {
+    cachedAccounts = await getAccounts();
+  }
+  return cachedAccounts;
+}
+
+async function fetchCategoriesWithCache(forceRefresh = false) {
+  if (forceRefresh || !cachedCategories) {
+    cachedCategories = await getCategories();
+  }
+  return cachedCategories;
+}
+
 async function loadGastosTab() {
   await Promise.all([populateSelects(), renderDashboardSummary()]);
   await renderTransactionList();
 }
 
-async function populateSelects() {
-  const [accounts, categories] = await Promise.all([getAccounts(), getCategories()]);
+async function populateSelects(forceRefresh = false) {
+  const [accounts, categories] = await Promise.all([
+    fetchAccountsWithCache(forceRefresh),
+    fetchCategoriesWithCache(forceRefresh)
+  ]);
 
   const accountSel  = document.getElementById('txAccount');
   const categorySel = document.getElementById('txCategory');
@@ -249,7 +269,7 @@ async function renderTransactionList() {
   if (!list) return;
 
   const [transactions, categories, accounts] = await Promise.all([
-    getTransactions(), getCategories(), getAccounts()
+    getTransactions(), fetchCategoriesWithCache(), fetchAccountsWithCache()
   ]);
 
   const catMap = Object.fromEntries(categories.map(c => [c.id, c]));
@@ -361,6 +381,7 @@ document.getElementById('accountForm')?.addEventListener('submit', async (e) => 
       e.target.reset();
     }
     
+    await populateSelects(true);
     await renderAccountsList();
   } catch (err) {
     showToast('Error: ' + err.message, 'error');
@@ -398,6 +419,7 @@ window.deleteAcc = async function (id) {
   showLoading('Eliminando cuenta...');
   try {
     await deleteAccount(id);
+    await populateSelects(true);
     await renderAccountsList();
     showToast('Cuenta eliminada');
   } catch (err) {
@@ -476,6 +498,7 @@ document.getElementById('categoryForm')?.addEventListener('submit', async (e) =>
       renderPendingSubcategories();
     }
 
+    await populateSelects(true);
     await renderCategoriesList();
   } catch (err) {
     showToast('Error: ' + err.message, 'error');
@@ -517,6 +540,7 @@ window.deleteCat = async function (id) {
   showLoading('Eliminando categoría...');
   try {
     await deleteCategory(id);
+    await populateSelects(true);
     await renderCategoriesList();
     showToast('Categoría eliminada');
   } catch (err) {
